@@ -21,7 +21,8 @@ import (
 //
 // Produces:
 type StepRun struct {
-	vmName string
+	vmName         string
+	BootToRecovery bool
 }
 
 // Run starts the VM.
@@ -32,6 +33,10 @@ func (s *StepRun) Run(ctx context.Context, state multistep.StateBag) multistep.S
 
 	ui.Say("Starting the virtual machine...")
 	command := []string{"start", vmName}
+	if s.BootToRecovery {
+		command = []string{"start", vmName, "--recovery-mode"}
+	}
+
 	if err := driver.Prlctl(command...); err != nil {
 		err = fmt.Errorf("Error starting VM: %s", err)
 		state.Put("error", err)

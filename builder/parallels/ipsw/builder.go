@@ -77,6 +77,8 @@ type Config struct {
 	// "packer-BUILDNAME", where "BUILDNAME" is the name of the build.
 	VMName string `mapstructure:"vm_name" required:"false"`
 
+	BootToRecovery bool `mapstructure:"boot_to_recovery" required:"False"`
+
 	ctx interpolate.Context
 }
 
@@ -160,6 +162,10 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 		b.config.OCRLibrary = "vision"
 	} else if b.config.OCRLibrary != "tesseract" && b.config.OCRLibrary != "vision" {
 		errs = packersdk.MultiErrorAppend(errs, fmt.Errorf("invalid ocr_library: %s", b.config.OCRLibrary))
+	}
+
+	if !b.config.BootToRecovery {
+		b.config.BootToRecovery = false
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {

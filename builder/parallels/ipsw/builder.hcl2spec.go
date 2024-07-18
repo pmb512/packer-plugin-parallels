@@ -96,6 +96,7 @@ type FlatConfig struct {
 	DiskSize                  *uint                         `mapstructure:"disk_size" required:"false" cty:"disk_size" hcl:"disk_size"`
 	HostInterfaces            []string                      `mapstructure:"host_interfaces" required:"false" cty:"host_interfaces" hcl:"host_interfaces"`
 	VMName                    *string                       `mapstructure:"vm_name" required:"false" cty:"vm_name" hcl:"vm_name"`
+	BootToRecovery            *bool                         `mapstructure:"boot_to_recovery" required:"False" cty:"boot_to_recovery" hcl:"boot_to_recovery"`
 }
 
 // FlatMapstructure returns a new FlatConfig.
@@ -195,6 +196,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"disk_size":                    &hcldec.AttrSpec{Name: "disk_size", Type: cty.Number, Required: false},
 		"host_interfaces":              &hcldec.AttrSpec{Name: "host_interfaces", Type: cty.List(cty.String), Required: false},
 		"vm_name":                      &hcldec.AttrSpec{Name: "vm_name", Type: cty.String, Required: false},
+		"boot_to_recovery":             &hcldec.AttrSpec{Name: "boot_to_recovery", Type: cty.Bool, Required: false},
 	}
 	return s
 }
