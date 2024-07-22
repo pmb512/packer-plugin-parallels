@@ -3,7 +3,7 @@
 
 //go:generate packer-sdc struct-markdown
 
-package ipsw
+package macvm
 
 import (
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
