@@ -68,7 +68,9 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			Commands: b.config.Prlctl,
 			Ctx:      b.config.ctx,
 		},
-		&parallelscommon.StepRun{},
+		&parallelscommon.StepRun{
+			BootToRecovery: b.config.BootToRecovery,
+		},
 		&parallelscommon.StepTypeBootCommand{
 			BootCommand:    b.config.FlatBootCommand(),
 			BootWait:       b.config.BootWait,

@@ -57,6 +57,8 @@ type Config struct {
 	// by Parallels. Defaults to "false".
 	ReassignMAC bool `mapstructure:"reassign_mac" required:"false"`
 
+	BootToRecovery bool `mapstructure:"boot_to_recovery" required:"False"`
+
 	ctx interpolate.Context
 }
 
@@ -111,6 +113,10 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		c.OCRLibrary = "vision"
 	} else if c.OCRLibrary != "tesseract" && c.OCRLibrary != "vision" {
 		errs = packersdk.MultiErrorAppend(errs, fmt.Errorf("invalid ocr_library: %s", c.OCRLibrary))
+	}
+
+	if !c.BootToRecovery {
+		c.BootToRecovery = false
 	}
 
 	if c.SourcePath == "" {
