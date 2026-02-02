@@ -43,13 +43,15 @@ type Config struct {
 	parallelscommon.PrlctlVersionConfig `mapstructure:",squash"`
 	shutdowncommand.ShutdownConfig      `mapstructure:",squash"`
 	parallelscommon.SSHConfig           `mapstructure:",squash"`
+	parallelscommon.VMConfig            `mapstructure:",squash"`
 
 	// Screens and it's boot configs
 	// A screen is considered matched if all the matching strings are present in the screen.
 	// The first matching screen will be considered & boot config of that screen will be used.
 	// If matching strings are empty, then it is considered as empty screen,
-	// which will be considered when none of the other screens are matched (You can use this screen to -
-	// make system wait for some time / execute a common boot command etc.).
+	// empty screen has some special meaning, which will be considered when none of the other screens are matched.
+	// You can use this screen to make system wait for some time / execute a common boot command etc.
+	// The empty screen boot command will be executed repeatedly until a non-empty screen is found.
 	// If more than one empty screen is found, then it is considered as an error.
 	BootScreenConfig parallelscommon.BootScreensConfig `mapstructure:"boot_screen_config" required:"false"`
 	// OCR library to use. Two options are currently supported: "tesseract" and "vision".
@@ -77,7 +79,8 @@ type Config struct {
 	// "packer-BUILDNAME", where "BUILDNAME" is the name of the build.
 	VMName string `mapstructure:"vm_name" required:"false"`
 
-	ctx interpolate.Context
+	ctx              interpolate.Context
+	screenConfigsMap map[string]parallelscommon.BootScreenConfig
 }
 
 func (b *Builder) ConfigSpec() hcldec.ObjectSpec { return b.config.FlatMapstructure().HCL2Spec() }
@@ -118,6 +121,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	errs = packersdk.MultiErrorAppend(errs, b.config.ShutdownConfig.Prepare(&b.config.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, b.config.SSHConfig.Prepare(&b.config.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, b.config.BootConfig.Prepare(&b.config.ctx)...)
+	errs = packersdk.MultiErrorAppend(errs, b.config.VMConfig.Prepare(&b.config.ctx)...)
 
 	if b.config.DiskSize == 0 {
 		b.config.DiskSize = 40000
@@ -144,11 +148,23 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	fmt.Fprintln(os.Stderr, "Screen count is : ", len(b.config.BootScreenConfig))
 
 	emptyScreenCount := 0
+	b.config.screenConfigsMap = make(map[string]parallelscommon.BootScreenConfig)
 	for _, screenConfig := range b.config.BootScreenConfig {
 		errs = packersdk.MultiErrorAppend(errs, screenConfig.Prepare(&b.config.ctx)...)
 		if len(screenConfig.MatchingStrings) == 0 {
 			emptyScreenCount++
 		}
+
+		if screenConfig.ScreenName == "" {
+			errs = packersdk.MultiErrorAppend(errs, fmt.Errorf("screen_name should not be empty"))
+			continue
+		}
+
+		if _, exists := b.config.screenConfigsMap[screenConfig.ScreenName]; exists {
+			errs = packersdk.MultiErrorAppend(errs, fmt.Errorf("multiple screens with same name: %s", screenConfig.ScreenName))
+			continue
+		}
+		b.config.screenConfigsMap[screenConfig.ScreenName] = screenConfig
 	}
 
 	if emptyScreenCount > 1 {
@@ -160,6 +176,12 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 		b.config.OCRLibrary = "vision"
 	} else if b.config.OCRLibrary != "tesseract" && b.config.OCRLibrary != "vision" {
 		errs = packersdk.MultiErrorAppend(errs, fmt.Errorf("invalid ocr_library: %s", b.config.OCRLibrary))
+	}
+
+	if b.config.StartupView == "coherence" || b.config.StartupView == "fullscreen" || b.config.StartupView == "modality" {
+		errs = packersdk.MultiErrorAppend(errs,
+			fmt.Errorf("invalid value for startup-view (not supported for macOS VMs): %s. Allowed values are : same, window, headless",
+				b.config.StartupView))
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {
@@ -192,6 +214,9 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 		commonsteps.HTTPServerFromHTTPConfig(&b.config.HTTPConfig),
 		new(stepCreateVM),
 		new(stepCreateDisk),
+		&parallelscommon.StepApplyVMConfig{
+			CustomVMConfig: b.config.VMConfig,
+		},
 		&parallelscommon.StepPrlctl{
 			Commands: b.config.Prlctl,
 			Ctx:      b.config.ctx,
@@ -207,7 +232,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			GroupInterval:  b.config.BootConfig.BootGroupInterval,
 		},
 		&parallelscommon.StepScreenBasedBoot{
-			ScreenConfigs: b.config.BootScreenConfig,
+			ScreenConfigs: b.config.screenConfigsMap,
 			OCRLibrary:    b.config.OCRLibrary,
 			VmName:        b.config.VMName,
 			Ctx:           b.config.ctx,

@@ -1,6 +1,9 @@
 // Copyright (c) Parallels International GmBH
 // SPDX-License-Identifier: MPL-2.0
 
+//go:build darwin
+// +build darwin
+
 package common
 
 import (
@@ -11,10 +14,10 @@ import (
 )
 
 type TesseractOCRWrapper struct {
-	ScreenConfigs []BootScreenConfig
+	ScreenConfigs map[string]BootScreenConfig
 }
 
-func NewTesseractOCRWrapper(ScreenConfigs []BootScreenConfig) *TesseractOCRWrapper {
+func NewTesseractOCRWrapper(ScreenConfigs map[string]BootScreenConfig) *TesseractOCRWrapper {
 	tesseractOCRWrapper := TesseractOCRWrapper{
 		ScreenConfigs: ScreenConfigs,
 	}
@@ -89,4 +92,8 @@ func (c *TesseractOCRWrapper) IdentifyCurrentScreen(imagePath string) (bootScree
 
 	log.Println("Detected text: ", text)
 	return c.detectScreen(text), nil
+}
+
+func (c *TesseractOCRWrapper) RemoveBootScreenConfigIfExist(screenName string) {
+	delete(c.ScreenConfigs, screenName)
 }

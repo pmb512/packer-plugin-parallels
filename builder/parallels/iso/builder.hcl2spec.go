@@ -24,6 +24,7 @@ type FlatConfig struct {
 	HTTPPortMax               *int              `mapstructure:"http_port_max" cty:"http_port_max" hcl:"http_port_max"`
 	HTTPAddress               *string           `mapstructure:"http_bind_address" cty:"http_bind_address" hcl:"http_bind_address"`
 	HTTPInterface             *string           `mapstructure:"http_interface" undocumented:"true" cty:"http_interface" hcl:"http_interface"`
+	HTTPNetworkProtocol       *string           `mapstructure:"http_network_protocol" cty:"http_network_protocol" hcl:"http_network_protocol"`
 	ISOChecksum               *string           `mapstructure:"iso_checksum" required:"true" cty:"iso_checksum" hcl:"iso_checksum"`
 	RawSingleISOUrl           *string           `mapstructure:"iso_url" required:"true" cty:"iso_url" hcl:"iso_url"`
 	ISOUrls                   []string          `mapstructure:"iso_urls" cty:"iso_urls" hcl:"iso_urls"`
@@ -33,6 +34,9 @@ type FlatConfig struct {
 	FloppyDirectories         []string          `mapstructure:"floppy_dirs" cty:"floppy_dirs" hcl:"floppy_dirs"`
 	FloppyContent             map[string]string `mapstructure:"floppy_content" cty:"floppy_content" hcl:"floppy_content"`
 	FloppyLabel               *string           `mapstructure:"floppy_label" cty:"floppy_label" hcl:"floppy_label"`
+	CDFiles                   []string          `mapstructure:"cd_files" cty:"cd_files" hcl:"cd_files"`
+	CDContent                 map[string]string `mapstructure:"cd_content" cty:"cd_content" hcl:"cd_content"`
+	CDLabel                   *string           `mapstructure:"cd_label" cty:"cd_label" hcl:"cd_label"`
 	BootGroupInterval         *string           `mapstructure:"boot_keygroup_interval" cty:"boot_keygroup_interval" hcl:"boot_keygroup_interval"`
 	BootWait                  *string           `mapstructure:"boot_wait" cty:"boot_wait" hcl:"boot_wait"`
 	BootCommand               []string          `mapstructure:"boot_command" cty:"boot_command" hcl:"boot_command"`
@@ -98,6 +102,8 @@ type FlatConfig struct {
 	ParallelsToolsFlavor      *string           `mapstructure:"parallels_tools_flavor" required:"true" cty:"parallels_tools_flavor" hcl:"parallels_tools_flavor"`
 	ParallelsToolsGuestPath   *string           `mapstructure:"parallels_tools_guest_path" required:"false" cty:"parallels_tools_guest_path" hcl:"parallels_tools_guest_path"`
 	ParallelsToolsMode        *string           `mapstructure:"parallels_tools_mode" required:"false" cty:"parallels_tools_mode" hcl:"parallels_tools_mode"`
+	StartupView               *string           `mapstructure:"startup_view" required:"false" cty:"startup_view" hcl:"startup_view"`
+	OnWindowClose             *string           `mapstructure:"on_window_close" required:"false" cty:"on_window_close" hcl:"on_window_close"`
 	DiskSize                  *uint             `mapstructure:"disk_size" required:"false" cty:"disk_size" hcl:"disk_size"`
 	DiskType                  *string           `mapstructure:"disk_type" required:"false" cty:"disk_type" hcl:"disk_type"`
 	GuestOSType               *string           `mapstructure:"guest_os_type" required:"false" cty:"guest_os_type" hcl:"guest_os_type"`
@@ -133,6 +139,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"http_port_max":                &hcldec.AttrSpec{Name: "http_port_max", Type: cty.Number, Required: false},
 		"http_bind_address":            &hcldec.AttrSpec{Name: "http_bind_address", Type: cty.String, Required: false},
 		"http_interface":               &hcldec.AttrSpec{Name: "http_interface", Type: cty.String, Required: false},
+		"http_network_protocol":        &hcldec.AttrSpec{Name: "http_network_protocol", Type: cty.String, Required: false},
 		"iso_checksum":                 &hcldec.AttrSpec{Name: "iso_checksum", Type: cty.String, Required: false},
 		"iso_url":                      &hcldec.AttrSpec{Name: "iso_url", Type: cty.String, Required: false},
 		"iso_urls":                     &hcldec.AttrSpec{Name: "iso_urls", Type: cty.List(cty.String), Required: false},
@@ -142,6 +149,9 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"floppy_dirs":                  &hcldec.AttrSpec{Name: "floppy_dirs", Type: cty.List(cty.String), Required: false},
 		"floppy_content":               &hcldec.AttrSpec{Name: "floppy_content", Type: cty.Map(cty.String), Required: false},
 		"floppy_label":                 &hcldec.AttrSpec{Name: "floppy_label", Type: cty.String, Required: false},
+		"cd_files":                     &hcldec.AttrSpec{Name: "cd_files", Type: cty.List(cty.String), Required: false},
+		"cd_content":                   &hcldec.AttrSpec{Name: "cd_content", Type: cty.Map(cty.String), Required: false},
+		"cd_label":                     &hcldec.AttrSpec{Name: "cd_label", Type: cty.String, Required: false},
 		"boot_keygroup_interval":       &hcldec.AttrSpec{Name: "boot_keygroup_interval", Type: cty.String, Required: false},
 		"boot_wait":                    &hcldec.AttrSpec{Name: "boot_wait", Type: cty.String, Required: false},
 		"boot_command":                 &hcldec.AttrSpec{Name: "boot_command", Type: cty.List(cty.String), Required: false},
@@ -207,6 +217,8 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"parallels_tools_flavor":       &hcldec.AttrSpec{Name: "parallels_tools_flavor", Type: cty.String, Required: false},
 		"parallels_tools_guest_path":   &hcldec.AttrSpec{Name: "parallels_tools_guest_path", Type: cty.String, Required: false},
 		"parallels_tools_mode":         &hcldec.AttrSpec{Name: "parallels_tools_mode", Type: cty.String, Required: false},
+		"startup_view":                 &hcldec.AttrSpec{Name: "startup_view", Type: cty.String, Required: false},
+		"on_window_close":              &hcldec.AttrSpec{Name: "on_window_close", Type: cty.String, Required: false},
 		"disk_size":                    &hcldec.AttrSpec{Name: "disk_size", Type: cty.Number, Required: false},
 		"disk_type":                    &hcldec.AttrSpec{Name: "disk_type", Type: cty.String, Required: false},
 		"guest_os_type":                &hcldec.AttrSpec{Name: "guest_os_type", Type: cty.String, Required: false},

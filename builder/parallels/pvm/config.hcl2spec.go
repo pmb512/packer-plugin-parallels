@@ -22,6 +22,9 @@ type FlatConfig struct {
 	FloppyDirectories         []string          `mapstructure:"floppy_dirs" cty:"floppy_dirs" hcl:"floppy_dirs"`
 	FloppyContent             map[string]string `mapstructure:"floppy_content" cty:"floppy_content" hcl:"floppy_content"`
 	FloppyLabel               *string           `mapstructure:"floppy_label" cty:"floppy_label" hcl:"floppy_label"`
+	CDFiles                   []string          `mapstructure:"cd_files" cty:"cd_files" hcl:"cd_files"`
+	CDContent                 map[string]string `mapstructure:"cd_content" cty:"cd_content" hcl:"cd_content"`
+	CDLabel                   *string           `mapstructure:"cd_label" cty:"cd_label" hcl:"cd_label"`
 	OutputDir                 *string           `mapstructure:"output_directory" required:"false" cty:"output_directory" hcl:"output_directory"`
 	Prlctl                    [][]string        `mapstructure:"prlctl" required:"false" cty:"prlctl" hcl:"prlctl"`
 	PrlctlPost                [][]string        `mapstructure:"prlctl_post" required:"false" cty:"prlctl_post" hcl:"prlctl_post"`
@@ -83,6 +86,8 @@ type FlatConfig struct {
 	ParallelsToolsFlavor      *string           `mapstructure:"parallels_tools_flavor" required:"true" cty:"parallels_tools_flavor" hcl:"parallels_tools_flavor"`
 	ParallelsToolsGuestPath   *string           `mapstructure:"parallels_tools_guest_path" required:"false" cty:"parallels_tools_guest_path" hcl:"parallels_tools_guest_path"`
 	ParallelsToolsMode        *string           `mapstructure:"parallels_tools_mode" required:"false" cty:"parallels_tools_mode" hcl:"parallels_tools_mode"`
+	StartupView               *string           `mapstructure:"startup_view" required:"false" cty:"startup_view" hcl:"startup_view"`
+	OnWindowClose             *string           `mapstructure:"on_window_close" required:"false" cty:"on_window_close" hcl:"on_window_close"`
 	SourcePath                *string           `mapstructure:"source_path" required:"true" cty:"source_path" hcl:"source_path"`
 	SkipCompaction            *bool             `mapstructure:"skip_compaction" required:"false" cty:"skip_compaction" hcl:"skip_compaction"`
 	VMName                    *string           `mapstructure:"vm_name" required:"false" cty:"vm_name" hcl:"vm_name"`
@@ -113,6 +118,9 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"floppy_dirs":                  &hcldec.AttrSpec{Name: "floppy_dirs", Type: cty.List(cty.String), Required: false},
 		"floppy_content":               &hcldec.AttrSpec{Name: "floppy_content", Type: cty.Map(cty.String), Required: false},
 		"floppy_label":                 &hcldec.AttrSpec{Name: "floppy_label", Type: cty.String, Required: false},
+		"cd_files":                     &hcldec.AttrSpec{Name: "cd_files", Type: cty.List(cty.String), Required: false},
+		"cd_content":                   &hcldec.AttrSpec{Name: "cd_content", Type: cty.Map(cty.String), Required: false},
+		"cd_label":                     &hcldec.AttrSpec{Name: "cd_label", Type: cty.String, Required: false},
 		"output_directory":             &hcldec.AttrSpec{Name: "output_directory", Type: cty.String, Required: false},
 		"prlctl":                       &hcldec.AttrSpec{Name: "prlctl", Type: cty.List(cty.List(cty.String)), Required: false},
 		"prlctl_post":                  &hcldec.AttrSpec{Name: "prlctl_post", Type: cty.List(cty.List(cty.String)), Required: false},
@@ -174,6 +182,8 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"parallels_tools_flavor":       &hcldec.AttrSpec{Name: "parallels_tools_flavor", Type: cty.String, Required: false},
 		"parallels_tools_guest_path":   &hcldec.AttrSpec{Name: "parallels_tools_guest_path", Type: cty.String, Required: false},
 		"parallels_tools_mode":         &hcldec.AttrSpec{Name: "parallels_tools_mode", Type: cty.String, Required: false},
+		"startup_view":                 &hcldec.AttrSpec{Name: "startup_view", Type: cty.String, Required: false},
+		"on_window_close":              &hcldec.AttrSpec{Name: "on_window_close", Type: cty.String, Required: false},
 		"source_path":                  &hcldec.AttrSpec{Name: "source_path", Type: cty.String, Required: false},
 		"skip_compaction":              &hcldec.AttrSpec{Name: "skip_compaction", Type: cty.Bool, Required: false},
 		"vm_name":                      &hcldec.AttrSpec{Name: "vm_name", Type: cty.String, Required: false},

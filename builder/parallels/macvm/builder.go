@@ -52,6 +52,12 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	state.Put("ui", ui)
 	state.Put("http_port", 0)
 
+	// Moving to a map for better processing
+	screenConfigsMap := make(map[string]parallelscommon.BootScreenConfig)
+	for _, screenConfig := range b.config.BootScreenConfig {
+		screenConfigsMap[screenConfig.ScreenName] = screenConfig
+	}
+
 	// Build the steps.
 	steps := []multistep.Step{
 		&parallelscommon.StepOutputDir{
@@ -63,6 +69,9 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			SourcePath:  b.config.SourcePath,
 			OutputDir:   b.config.OutputDir,
 			ReassignMAC: b.config.ReassignMAC,
+		},
+		&parallelscommon.StepApplyVMConfig{
+			CustomVMConfig: b.config.VMConfig,
 		},
 		&parallelscommon.StepPrlctl{
 			Commands: b.config.Prlctl,
@@ -78,7 +87,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			GroupInterval:  b.config.BootConfig.BootGroupInterval,
 		},
 		&parallelscommon.StepScreenBasedBoot{
-			ScreenConfigs: b.config.BootScreenConfig,
+			ScreenConfigs: screenConfigsMap,
 			OCRLibrary:    b.config.OCRLibrary,
 			VmName:        b.config.VMName,
 			Ctx:           b.config.ctx,
